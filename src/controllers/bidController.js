@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { io } from "../../server.js";
+import { bidSchema } from "../schemas/bidSchemas.js";
 
 export const placeBid = async (req, res) => {
     try {
@@ -18,7 +19,11 @@ export const placeBid = async (req, res) => {
         if (auction.sellerId === userId) {
             return res.status(400).json({ message: 'You cannot bid on your own auction' });
         }
-        const { amount } = req.body;
+        const { success, data, error } = bidSchema.safeParse(req.body);
+        if (!success) {
+            return res.status(400).json({ error: error.issues[0].message });
+        }
+        const { amount } = data;
         if (!amount || parseFloat(amount) <= parseFloat(auction.currentPrice)) {
             return res.status(400).json({ message: 'Bid amount must be greater than current price' });
         }

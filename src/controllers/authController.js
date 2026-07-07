@@ -1,14 +1,15 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
+import { registerSchema, loginSchema } from "../schemas/authSchemas.js";
 
 export const register = async (req, res) => {
+    const { success, data, error } = registerSchema.safeParse(req.body);
+    if (!success) {
+        return res.status(400).json({ error: error.issues[0].message });
+    }
     try {
-        const { email, password, username } = req.body;
-
-        if (!email || !password || !username) {
-            return res.status(400).json({ error: "All fields are required" });
-        }
+        const { email, password, username } = data;
 
         const existingUser = await prisma.user.findFirst({
             where: {
@@ -47,12 +48,12 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
+    const { success, data, error } = loginSchema.safeParse(req.body);
+    if (!success) {
+        return res.status(400).json({ error: error.issues[0].message });
+    }
     try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({ error: "Email and password are required" });
-        }
+        const { email, password } = data;
 
         const user = await prisma.user.findUnique({ where: { email } });
 

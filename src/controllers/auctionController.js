@@ -1,12 +1,13 @@
 import { prisma } from '../lib/prisma.js';
+import { createAuctionSchema, updateAuctionSchema } from '../schemas/auctionSchemas.js';
 
 export const createAuction = async (req, res) => {
+    const { success, data, error } = createAuctionSchema.safeParse(req.body);
+    if (!success) {
+        return res.status(400).json({ error: error.issues[0].message });
+    }
     try {
-        const { title, description, startPrice, endsAt } = req.body;
-
-        if (!title || !description || !startPrice || !endsAt) {
-            return res.status(400).json({ message: 'All fields are required' });
-        }
+        const { title, description, startPrice, endsAt } = data;
 
         const currentPrice = parseFloat(startPrice);
 
@@ -22,6 +23,7 @@ export const createAuction = async (req, res) => {
         });
         return res.status(201).json({ message: 'Auction created successfully', auction });
     } catch (error) {
+        console.error(error);
         return res.status(500).json({ message: 'Error occurred while creating auction' });
     }
 }
@@ -51,6 +53,7 @@ export const getAuctions = async (req, res) => {
         });
         return res.status(200).json({ auctions });
     } catch (error) {
+        console.error(error);
         return res.status(500).json({ message: 'Error occurred while fetching auctions' });
     }
 }
@@ -87,7 +90,11 @@ export const updateAuction = async (req, res) => {
             return res.status(403).json({ message: 'You are not authorized to update this auction' });
         }
 
-        const { title, description, startPrice, endsAt } = req.body;
+        const { success, data, error } = updateAuctionSchema.safeParse(req.body);
+        if (!success) {
+            return res.status(400).json({ error: error.issues[0].message });
+        }
+        const { title, description, startPrice, endsAt } = data;
         const updatedAuction = await prisma.auction.update({
             where: { id },
             data: {
