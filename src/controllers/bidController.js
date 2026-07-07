@@ -2,30 +2,42 @@ import { prisma } from "../lib/prisma.js";
 import { io } from "../../server.js";
 import { bidSchema } from "../schemas/bidSchemas.js";
 
-export const placeBid = async (req, res) => {
+export const placeBid = async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const { id } = req.params;
         const auction = await prisma.auction.findUnique({ where: { id } });
         if (!auction) {
-            return res.status(404).json({ message: 'Auction not found' });
+            const error = new Error('Auction not found');
+            error.statusCode = 404;
+            return next(error);
         }
         if (auction.status !== 'ACTIVE') {
-            return res.status(400).json({ message: 'Auction is not active' });
+            const error = new Error('Auction is not active');
+            error.statusCode = 400;
+            return next(error);
         }
         if (auction.endsAt < new Date()) {
-            return res.status(400).json({ message: 'Auction has already ended' });
+            const error = new Error('Auction has already ended');
+            error.statusCode = 400;
+            return next(error);
         }
         if (auction.sellerId === userId) {
-            return res.status(400).json({ message: 'You cannot bid on your own auction' });
+            const error = new Error('You cannot bid on your own auction');
+            error.statusCode = 400;
+            return next(error);
         }
-        const { success, data, error } = bidSchema.safeParse(req.body);
+        const { success, data, error: zodError } = bidSchema.safeParse(req.body);
         if (!success) {
-            return res.status(400).json({ error: error.issues[0].message });
+            const error = new Error(zodError.issues[0].message);
+            error.statusCode = 400;
+            return next(error);
         }
         const { amount } = data;
         if (!amount || parseFloat(amount) <= parseFloat(auction.currentPrice)) {
-            return res.status(400).json({ message: 'Bid amount must be greater than current price' });
+            const error = new Error('Bid amount must be greater than current price');
+            error.statusCode = 400;
+            return next(error);
         }
         const timeToEnd = auction.endsAt - new Date();
         const fiveMinutes = 5 * 60 * 1000;
@@ -43,12 +55,11 @@ export const placeBid = async (req, res) => {
         io.to(id).emit('new-bid', { bid, currentPrice: updatedAuction.currentPrice });
         return res.status(201).json({ message: 'Bid placed successfully', bid });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error occurred while placing bid' });
+        return next(error);
     }
 }
 
-export const getBidsForAuction = async (req, res) => {
+export const getBidsForAuction = async (req, res, next) => {
     try {
         const { id } = req.params;
         const bids = await prisma.bid.findMany({
@@ -58,7 +69,6 @@ export const getBidsForAuction = async (req, res) => {
         });
         return res.status(200).json({ bids });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error occurred while fetching bids' });
+        return next(error);
     }
 }

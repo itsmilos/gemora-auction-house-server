@@ -3,10 +3,12 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
 import { registerSchema, loginSchema } from "../schemas/authSchemas.js";
 
-export const register = async (req, res) => {
-    const { success, data, error } = registerSchema.safeParse(req.body);
+export const register = async (req, res, next) => {
+    const { success, data, error: zodError } = registerSchema.safeParse(req.body);
     if (!success) {
-        return res.status(400).json({ error: error.issues[0].message });
+        const error = new Error(zodError.issues[0].message);
+        error.statusCode = 400;
+        return next(error);
     }
     try {
         const { email, password, username } = data;
@@ -18,7 +20,9 @@ export const register = async (req, res) => {
         });
 
         if (existingUser) {
-            return res.status(409).json({ error: "Email or username already taken" });
+            const error = new Error("Email or username already taken");
+            error.statusCode = 409;
+            return next(error);
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -42,15 +46,16 @@ export const register = async (req, res) => {
             user: { id: user.id, email: user.email, username: user.username, role: user.role },
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Something went wrong" });
+        next(error);
     }
 };
 
-export const login = async (req, res) => {
-    const { success, data, error } = loginSchema.safeParse(req.body);
+export const login = async (req, res, next) => {
+    const { success, data, error: zodError } = loginSchema.safeParse(req.body);
     if (!success) {
-        return res.status(400).json({ error: error.issues[0].message });
+        const error = new Error(zodError.issues[0].message);
+        error.statusCode = 400;
+        return next(error);
     }
     try {
         const { email, password } = data;
@@ -58,13 +63,17 @@ export const login = async (req, res) => {
         const user = await prisma.user.findUnique({ where: { email } });
 
         if (!user) {
-            return res.status(401).json({ error: "Invalid credentials" });
+            const error = new Error('Invalid credentials');
+            error.statusCode = 401;
+            return next(error);
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
 
         if (!isValidPassword) {
-            return res.status(401).json({ error: "Invalid credentials" });
+            const error = new Error('Invalid credentials');
+            error.statusCode = 401;
+            return next(error);
         }
 
         const token = jwt.sign(
@@ -78,7 +87,6 @@ export const login = async (req, res) => {
             user: { id: user.id, email: user.email, username: user.username, role: user.role },
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Something went wrong" });
+        next(error);
     }
 };

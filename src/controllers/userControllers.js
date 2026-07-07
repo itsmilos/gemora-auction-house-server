@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 
-export const getUserById = async (req, res) => {
+export const getUserById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const user = await prisma.user.findUnique({
@@ -12,11 +12,12 @@ export const getUserById = async (req, res) => {
             }
         });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            const error = new Error('User not found');
+            error.statusCode = 404;
+            return next(error);
         }
         return res.status(200).json({ user });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error occurred while fetching user' });
+        next(error);
     }
 }

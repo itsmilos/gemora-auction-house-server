@@ -1,14 +1,15 @@
 import { prisma } from '../lib/prisma.js';
 import { createAuctionSchema, updateAuctionSchema } from '../schemas/auctionSchemas.js';
 
-export const createAuction = async (req, res) => {
+export const createAuction = async (req, res, next) => {
     const { success, data, error } = createAuctionSchema.safeParse(req.body);
     if (!success) {
-        return res.status(400).json({ error: error.issues[0].message });
+        const err = new Error(error.issues[0].message);
+        err.statusCode = 400;
+        return next(err);
     }
     try {
         const { title, description, startPrice, endsAt } = data;
-
         const currentPrice = parseFloat(startPrice);
 
         const auction = await prisma.auction.create({
@@ -23,13 +24,12 @@ export const createAuction = async (req, res) => {
         });
         return res.status(201).json({ message: 'Auction created successfully', auction });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error occurred while creating auction' });
+        next(error);
     }
 }
 
-export const getAuctions = async (req, res) => {
-    const { search, minPrice, maxPrice, sortBy, order } = req.query;
+export const getAuctions = async (req, res, next) => {
+    const { search, minPrice, maxPrice } = req.query;
 
     const where = {
         status: 'ACTIVE',
@@ -53,12 +53,11 @@ export const getAuctions = async (req, res) => {
         });
         return res.status(200).json({ auctions });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error occurred while fetching auctions' });
+        next(error);
     }
 }
 
-export const getAuctionById = async (req, res) => {
+export const getAuctionById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const auction = await prisma.auction.findUnique({
@@ -69,31 +68,39 @@ export const getAuctionById = async (req, res) => {
             }
         });
         if (!auction) {
-            return res.status(404).json({ message: 'Auction not found' });
+            const error = new Error('Auction not found');
+            error.statusCode = 404;
+            return next(error);
         }
         return res.status(200).json({ auction });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error occurred while fetching auction' });
+        next(error);
     }
 }
 
-export const updateAuction = async (req, res) => {
+export const updateAuction = async (req, res, next) => {
     try {
         const { id } = req.params;
         const auction = await prisma.auction.findUnique({ where: { id } });
         if (!auction) {
-            return res.status(404).json({ message: 'Auction not found' });
+            const error = new Error('Auction not found');
+            error.statusCode = 404;
+            return next(error);
         }
 
         if (auction.sellerId !== req.user.userId) {
-            return res.status(403).json({ message: 'You are not authorized to update this auction' });
+            const error = new Error('You are not authorized to update this auction');
+            error.statusCode = 403;
+            return next(error);
         }
 
-        const { success, data, error } = updateAuctionSchema.safeParse(req.body);
+        const { success, data, error: zodError } = updateAuctionSchema.safeParse(req.body);
         if (!success) {
-            return res.status(400).json({ error: error.issues[0].message });
+            const error = new Error(zodError.issues[0].message);
+            error.statusCode = 400;
+            return next(error);
         }
+
         const { title, description, startPrice, endsAt } = data;
         const updatedAuction = await prisma.auction.update({
             where: { id },
@@ -106,28 +113,29 @@ export const updateAuction = async (req, res) => {
         });
         return res.status(200).json({ message: 'Auction updated successfully', auction: updatedAuction });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error occurred while updating auction' });
+        next(error);
     }
 }
 
-export const deleteAuction = async (req, res) => {
+export const deleteAuction = async (req, res, next) => {
     try {
         const { id } = req.params;
         const auction = await prisma.auction.findUnique({ where: { id } });
         if (!auction) {
-            return res.status(404).json({ message: 'Auction not found' });
+            const error = new Error('Auction not found');
+            error.statusCode = 404;
+            return next(error);
         }
 
         if (auction.sellerId !== req.user.userId) {
-            return res.status(403).json({ message: 'You are not authorized to delete this auction' });
+            const error = new Error('You are not authorized to delete this auction');
+            error.statusCode = 403;
+            return next(error);
         }
 
         await prisma.auction.delete({ where: { id } });
         return res.status(200).json({ message: 'Auction deleted successfully' });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error occurred while deleting auction' });
+        next(error);
     }
 }
-

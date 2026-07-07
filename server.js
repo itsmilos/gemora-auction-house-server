@@ -10,6 +10,7 @@ import bidRoutes from "./src/routes/bidRoutes.js";
 import userRoutes from "./src/routes/usersRoutes.js";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
+import { errorHandler } from "./src/middleware/errorHandler.js";
 
 dotenv.config();
 
@@ -45,6 +46,8 @@ app.use('/api/users', userRoutes);
 app.get("/", (req, res) => {
     res.json({ message: "Auction House API is running" });
 });
+
+app.use(errorHandler);
 
 io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
