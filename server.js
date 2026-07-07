@@ -8,10 +8,24 @@ import authRoutes from "./src/routes/authRoutes.js";
 import auctionRoutes from "./src/routes/auctionRoutes.js";
 import bidRoutes from "./src/routes/bidRoutes.js";
 import userRoutes from "./src/routes/usersRoutes.js";
+import helmet from "helmet";
+import { rateLimit } from "express-rate-limit";
 
 dotenv.config();
 
 const app = express();
+app.use(helmet());
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 100,
+    message: 'Too many requests, please try again later.',
+});
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    message: 'Too many login attempts, please try again later.',
+})
+app.use(generalLimiter);
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
@@ -23,7 +37,7 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/auctions", auctionRoutes);
 app.use("/api/auctions/:id/bids", bidRoutes);
 app.use('/api/users', userRoutes);
