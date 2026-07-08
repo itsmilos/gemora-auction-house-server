@@ -25,6 +25,22 @@ const auctions = [
     { title: "Antique Pearl Necklace", category: "JEWELRY", description: "Natural pearls, gold clasp, early 20th century." },
     { title: "Gibson Les Paul 1959 Reissue", category: "MUSIC_INSTRUMENTS", description: "Highly sought-after reissue model." },
     { title: "Vintage Fender Stratocaster", category: "MUSIC_INSTRUMENTS", description: "Classic tone, well-maintained original parts." },
+    { title: "Aston Martin DB5 (1964)", category: "VEHICLES", description: "Iconic British sports car, matching numbers." },
+    { title: "Vespa 150 Scooter (1962)", category: "VEHICLES", description: "Fully restored Italian classic, runs great." },
+    { title: "Patek Philippe Calatrava", category: "WATCHES", description: "Elegant dress watch, box and papers included." },
+    { title: "Cartier Tank Watch", category: "WATCHES", description: "Timeless design, recently serviced." },
+    { title: "Impressionist Landscape Painting", category: "ART", description: "Late 19th century oil on canvas, unsigned." },
+    { title: "Marble Bust - Roman Style", category: "ART", description: "Hand-carved marble, 18th century reproduction." },
+    { title: "Mid-Century Modern Sideboard", category: "FURNITURE", description: "Teak wood, original hardware, Danish design." },
+    { title: "Chesterfield Leather Sofa", category: "FURNITURE", description: "Genuine leather, classic tufted design." },
+    { title: "Signed First Edition of 1984 by George Orwell", category: "BOOKS", description: "Rare signed copy, protective slipcase included." },
+    { title: "Complete Set of Encyclopedia Britannica (1911)", category: "BOOKS", description: "Full 29-volume set, leather bound." },
+    { title: "Hasselblad 500C Medium Format Camera", category: "CAMERAS", description: "Legendary medium format body, includes lens." },
+    { title: "Canon AE-1 Program Film Camera", category: "CAMERAS", description: "Fully functional, classic 35mm SLR." },
+    { title: "Vintage Sapphire and Diamond Brooch", category: "JEWELRY", description: "Art Nouveau design, platinum setting." },
+    { title: "Gold Pocket Watch Chain", category: "JEWELRY", description: "14k gold, Victorian era craftsmanship." },
+    { title: "Vintage Steinway Upright Piano", category: "MUSIC_INSTRUMENTS", description: "Fully restored, rich warm tone." },
+    { title: "1960s Ludwig Drum Kit", category: "MUSIC_INSTRUMENTS", description: "Classic rock kit, original hardware." },
 ];
 
 async function main() {
