@@ -24,6 +24,17 @@ enum Role {
   ADMIN
 }
 
+enum Category {
+  VEHICLES
+  WATCHES
+  ART
+  FURNITURE
+  BOOKS
+  CAMERAS
+  JEWELRY
+  MUSIC_INSTRUMENTS
+}
+
 model Auction {
   id          String    @id @default(uuid())
   title       String
@@ -40,6 +51,8 @@ model Auction {
   seller      User      @relation("SellerAuctions", fields: [sellerId], references: [id])
 
   bids        Bid[]
+
+  category Category
 }
 
 enum AuctionStatus {

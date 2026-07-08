@@ -9,7 +9,7 @@ export const createAuction = async (req, res, next) => {
         return next(err);
     }
     try {
-        const { title, description, startPrice, endsAt } = data;
+        const { title, description, startPrice, endsAt, category } = data;
         const currentPrice = parseFloat(startPrice);
 
         const auction = await prisma.auction.create({
@@ -20,6 +20,7 @@ export const createAuction = async (req, res, next) => {
                 currentPrice,
                 endsAt: new Date(endsAt),
                 sellerId: req.user.userId,
+                category
             }
         });
         return res.status(201).json({ message: 'Auction created successfully', auction });
@@ -29,7 +30,7 @@ export const createAuction = async (req, res, next) => {
 }
 
 export const getAuctions = async (req, res, next) => {
-    const { search, minPrice, maxPrice } = req.query;
+    const { search, minPrice, maxPrice, category } = req.query;
 
     const where = {
         status: 'ACTIVE',
@@ -44,6 +45,10 @@ export const getAuctions = async (req, res, next) => {
         where.currentPrice = {};
         if (minPrice) where.currentPrice.gte = parseFloat(minPrice);
         if (maxPrice) where.currentPrice.lte = parseFloat(maxPrice);
+    }
+
+    if (category) {
+        where.category = category;
     }
 
     try {
