@@ -52,7 +52,21 @@ export const placeBid = async (req, res, next) => {
                 data: { currentPrice: parseFloat(amount), endsAt: newEndsAt }
             })
         ]);
-        io.to(id).emit('new-bid', { bid, currentPrice: updatedAuction.currentPrice });
+        const bidWithUser = await prisma.bid.findUnique({
+            where: { id: bid.id },
+            include: {
+                bidder: {
+                    select: {
+                        username: true
+                    }
+                }
+            }
+        });
+
+        io.to(id).emit('new-bid', {
+            bid: bidWithUser,
+            currentPrice: updatedAuction.currentPrice
+        });
         return res.status(201).json({ message: 'Bid placed successfully', bid });
     } catch (error) {
         return next(error);

@@ -20,7 +20,7 @@ export const register = async (req, res, next) => {
         });
 
         if (existingUser) {
-            const error = new Error("Email or username already taken");
+            const error = new Error("User with these credentials already exists");
             error.statusCode = 409;
             return next(error);
         }
@@ -90,3 +90,26 @@ export const login = async (req, res, next) => {
         next(error);
     }
 };
+
+export const getUser = async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                role: true
+            }
+        });
+        if (!user) {
+            const error = new Error('User not found');
+            error.statusCode = 404;
+            return next(error);
+        }
+        return res.status(200).json({ user });
+    } catch (error) {
+        next(error);
+    }
+}

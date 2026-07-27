@@ -9,7 +9,7 @@ export const createAuction = async (req, res, next) => {
         return next(err);
     }
     try {
-        const { title, description, startPrice, endsAt, category } = data;
+        const { title, description, startPrice, endsAt, category, imageUrl } = data;
         const currentPrice = parseFloat(startPrice);
 
         const auction = await prisma.auction.create({
@@ -20,7 +20,8 @@ export const createAuction = async (req, res, next) => {
                 currentPrice,
                 endsAt: new Date(endsAt),
                 sellerId: req.user.userId,
-                category
+                category,
+                imageUrl
             }
         });
         return res.status(201).json({ message: 'Auction created successfully', auction });
@@ -30,7 +31,7 @@ export const createAuction = async (req, res, next) => {
 }
 
 export const getAuctions = async (req, res, next) => {
-    const { search, minPrice, maxPrice, category } = req.query;
+    const { search, minPrice, maxPrice, category, sortby } = req.query;
 
     const where = {
         status: 'ACTIVE',
@@ -51,10 +52,20 @@ export const getAuctions = async (req, res, next) => {
         where.category = category;
     }
 
+    let orderBy = { endsAt: 'asc' };
+
+    if (sortby === 'newest') {
+        orderBy = { createdAt: 'desc' };
+    } else if (sortby === 'price_asc') {
+        orderBy = { currentPrice: 'asc' };
+    } else if (sortby === "price_desc") {
+        orderBy = { currentPrice: 'desc' };
+    }
+
     try {
         const auctions = await prisma.auction.findMany({
             where,
-            orderBy: { endsAt: 'asc' }
+            orderBy
         });
         return res.status(200).json({ auctions });
     } catch (error) {
@@ -68,7 +79,7 @@ export const getAuctionById = async (req, res, next) => {
         const auction = await prisma.auction.findUnique({
             where: { id },
             include: {
-                seller: { select: { username: true } },
+                seller: { select: { id: true, username: true } },
                 bids: { orderBy: { amount: 'desc' } }
             }
         });
@@ -86,7 +97,7 @@ export const getAuctionById = async (req, res, next) => {
 export const updateAuction = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const auction = await prisma.auction.findUnique({ where: { id } });
+        const auction = await prisma.auction.findUnique({ where: { id }, include: { bids: true } });
         if (!auction) {
             const error = new Error('Auction not found');
             error.statusCode = 404;
@@ -99,6 +110,12 @@ export const updateAuction = async (req, res, next) => {
             return next(error);
         }
 
+        if (auction.bids.length > 0) {
+            const error = new Error('Cannot edit an auction that already has bids');
+            error.statusCode = 403;
+            return next(error);
+        }
+
         const { success, data, error: zodError } = updateAuctionSchema.safeParse(req.body);
         if (!success) {
             const error = new Error(zodError.issues[0].message);
@@ -106,7 +123,8 @@ export const updateAuction = async (req, res, next) => {
             return next(error);
         }
 
-        const { title, description, startPrice, endsAt } = data;
+        const { title, description, startPrice, endsAt, category, imageUrl } = data;
+
         const updatedAuction = await prisma.auction.update({
             where: { id },
             data: {
@@ -114,6 +132,8 @@ export const updateAuction = async (req, res, next) => {
                 description: description || auction.description,
                 startPrice: startPrice ? parseFloat(startPrice) : auction.startPrice,
                 endsAt: endsAt ? new Date(endsAt) : auction.endsAt,
+                category: category || auction.category,
+                imageUrl: imageUrl || auction.imageUrl,
             }
         });
         return res.status(200).json({ message: 'Auction updated successfully', auction: updatedAuction });
@@ -125,7 +145,7 @@ export const updateAuction = async (req, res, next) => {
 export const deleteAuction = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const auction = await prisma.auction.findUnique({ where: { id } });
+        const auction = await prisma.auction.findUnique({ where: { id }, include: { bids: true } });
         if (!auction) {
             const error = new Error('Auction not found');
             error.statusCode = 404;
@@ -134,6 +154,12 @@ export const deleteAuction = async (req, res, next) => {
 
         if (auction.sellerId !== req.user.userId) {
             const error = new Error('You are not authorized to delete this auction');
+            error.statusCode = 403;
+            return next(error);
+        }
+
+        if (auction.bids.length > 0) {
+            const error = new Error('Cannot delete an auction that already has bids');
             error.statusCode = 403;
             return next(error);
         }

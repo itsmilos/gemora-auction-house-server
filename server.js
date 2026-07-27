@@ -8,6 +8,7 @@ import authRoutes from "./src/routes/authRoutes.js";
 import auctionRoutes from "./src/routes/auctionRoutes.js";
 import bidRoutes from "./src/routes/bidRoutes.js";
 import userRoutes from "./src/routes/usersRoutes.js";
+import uploadRoutes from "./src/routes/uploadRoutes.js";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import { errorHandler } from "./src/middleware/errorHandler.js";
@@ -42,6 +43,7 @@ app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/auctions", auctionRoutes);
 app.use("/api/auctions/:id/bids", bidRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api', uploadRoutes);
 
 app.get("/", (req, res) => {
     res.json({ message: "Auction House API is running" });
@@ -50,15 +52,18 @@ app.get("/", (req, res) => {
 app.use(errorHandler);
 
 io.on("connection", (socket) => {
-    console.log("New client connected:", socket.id);
+    console.log("User connected:", socket.id);
 
     socket.on("join-auction", (auctionId) => {
         socket.join(auctionId);
-        console.log(`Socket ${socket.id} joined auction room ${auctionId}`);
+
+        console.log(
+            `${socket.id} joined auction ${auctionId}`
+        );
     });
 
-    socket.on("disconnect", () => {
-        console.log("Client disconnected:", socket.id);
+    socket.on("leave-auction", (auctionId) => {
+        socket.leave(auctionId);
     });
 });
 
