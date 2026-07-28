@@ -57,4 +57,4 @@ server.js                   # Entry point — Express + Socket.io + cron bootstr
 
 👤 Author
 
-Milos — github.com/itsmilos
+Milos Lazendic — github.com/itsmilos
