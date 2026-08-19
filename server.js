@@ -35,7 +35,7 @@ app.use(generalLimiter);
 
 const allowedOrigins = [
     "http://localhost:5173",
-    "https://tvoj-projekat.vercel.app", // Zamijeni svojim Vercel URL-om
+    "https://gemora-auction-house-client-3iod.vercel.app/", 
 ];
 
 app.use(
