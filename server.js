@@ -35,7 +35,7 @@ app.use(generalLimiter);
 
 const allowedOrigins = [
     "http://localhost:5173",
-    "https://gemora-auction-house-client-3iod.vercel.app/", 
+    "https://gemora-auction-house-client-3iod.vercel.app", 
 ];
 
 app.use(
