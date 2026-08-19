@@ -16,34 +16,57 @@ import { errorHandler } from "./src/middleware/errorHandler.js";
 dotenv.config();
 
 const app = express();
+
 app.use(helmet());
+
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 100,
-    message: 'Too many requests, please try again later.',
+    message: "Too many requests, please try again later.",
 });
+
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 10,
-    message: 'Too many login attempts, please try again later.',
-})
+    message: "Too many login attempts, please try again later.",
+});
+
 app.use(generalLimiter);
+
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://tvoj-projekat.vercel.app", // Zamijeni svojim Vercel URL-om
+];
+
+app.use(
+    cors({
+        origin(origin, callback) {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
+        credentials: true,
+    })
+);
+
+app.use(express.json());
+
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: "*",
+        origin: allowedOrigins,
+        credentials: true,
     },
 });
-
-app.use(cors());
-app.use(express.json());
 
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/auctions", auctionRoutes);
 app.use("/api/auctions/:id/bids", bidRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api', uploadRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api", uploadRoutes);
 
 app.get("/", (req, res) => {
     res.json({ message: "Auction House API is running" });
@@ -56,14 +79,15 @@ io.on("connection", (socket) => {
 
     socket.on("join-auction", (auctionId) => {
         socket.join(auctionId);
-
-        console.log(
-            `${socket.id} joined auction ${auctionId}`
-        );
+        console.log(`${socket.id} joined auction ${auctionId}`);
     });
 
     socket.on("leave-auction", (auctionId) => {
         socket.leave(auctionId);
+    });
+
+    socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
     });
 });
 
