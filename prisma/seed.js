@@ -60,7 +60,6 @@ async function main() {
 
     for (const item of auctions) {
         const startPrice = Math.floor(Math.random() * 8000) + 500;
-        const daysFromNow = Math.floor(Math.random() * 14) + 1;
 
         await prisma.auction.create({
             data: {
@@ -69,7 +68,7 @@ async function main() {
                 category: item.category,
                 startPrice,
                 currentPrice: startPrice,
-            endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+           endsAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
                 sellerId: seller.id,
                 imageUrl: item.imageUrl
             },
