@@ -68,7 +68,7 @@ async function main() {
                 category: item.category,
                 startPrice,
                 currentPrice: startPrice,
-           endsAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+          endsAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
                 sellerId: seller.id,
                 imageUrl: item.imageUrl
             },
